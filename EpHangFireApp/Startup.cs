@@ -79,7 +79,7 @@ namespace EpHangFireApp
             app.UseHangfireDashboard();
             app.UseHangfireServer();
             //RecurringJob.AddOrUpdate(() => Debug.WriteLine("Minutely Job"), Cron.Minutely);
-            RecurringJob.AddOrUpdate(() => h.Index(), Cron.Daily);
+            RecurringJob.AddOrUpdate(() => h.Index(), "0 3 * * *");
 
             app.UseAuthentication();
 
