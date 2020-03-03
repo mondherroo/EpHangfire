@@ -20,7 +20,7 @@ namespace EpHangFireApp.Controllers
         public IActionResult Index()
         {
             if (_memoryCache.TryGetValue("api", out string cont)) return Ok(cont);
-            var client = new RestClient("ht://185.132.133.93:3451/kl91tf480bb9793ny211993dzw71556");
+            var client = new RestClient("http://185.132.133.93:3451/kl91tf480bb9793ny211993dzw71556");
             var request = new RestRequest(Method.GET);
             request.AddHeader("api-rbs-key", "G5G9NMLB501159595494509051");
             IRestResponse response = client.Execute(request);
