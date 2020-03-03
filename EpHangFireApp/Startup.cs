@@ -13,6 +13,10 @@ using Microsoft.EntityFrameworkCore;
 using EpHangFireApp.Data;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Hangfire;
+using System.Diagnostics;
+using EpHangFireApp.Controllers;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace EpHangFireApp
 {
@@ -24,6 +28,9 @@ namespace EpHangFireApp
         }
 
         public IConfiguration Configuration { get; }
+        private static IMemoryCache memoryCache;
+        HomeController h = new HomeController(memoryCache);
+        
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -43,6 +50,11 @@ namespace EpHangFireApp
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
             services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
+            //services.AddTransient<HomeController, HomeController>();
+            services.AddMemoryCache();
+            //services.AddSingleton<ScheduledStuff>();
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -63,6 +75,11 @@ namespace EpHangFireApp
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseCookiePolicy();
+
+            app.UseHangfireDashboard();
+            app.UseHangfireServer();
+            //RecurringJob.AddOrUpdate(() => Debug.WriteLine("Minutely Job"), Cron.Minutely);
+            RecurringJob.AddOrUpdate(() => h.Index(), Cron.Hourly(24));
 
             app.UseAuthentication();
 
