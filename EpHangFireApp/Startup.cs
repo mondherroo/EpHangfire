@@ -17,6 +17,7 @@ using Hangfire;
 using System.Diagnostics;
 using EpHangFireApp.Controllers;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Hosting;
 
 namespace EpHangFireApp
 {
@@ -28,10 +29,8 @@ namespace EpHangFireApp
         }
 
         public IConfiguration Configuration { get; }
-        private static IMemoryCache memoryCache;
-        HomeController h = new HomeController(memoryCache);
+     
         
-
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
@@ -46,19 +45,23 @@ namespace EpHangFireApp
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
             services.AddDefaultIdentity<IdentityUser>()
-                .AddDefaultUI(UIFramework.Bootstrap4)
+                .AddDefaultUI()
                 .AddEntityFrameworkStores<ApplicationDbContext>();
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            //services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+
+            services.AddControllersWithViews();
+
             services.AddHangfire(x => x.UseSqlServerStorage(Configuration.GetConnectionString("DefaultConnection")));
             //services.AddTransient<HomeController, HomeController>();
             services.AddMemoryCache();
+            services.AddTransient<EPGProgram>(); 
             //services.AddSingleton<ScheduledStuff>();
 
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -78,17 +81,18 @@ namespace EpHangFireApp
 
             app.UseHangfireDashboard();
             app.UseHangfireServer();
+
             //RecurringJob.AddOrUpdate(() => Debug.WriteLine("Minutely Job"), Cron.Minutely);
-            RecurringJob.AddOrUpdate(() => h.Index(), "0 3 * * *");
-
+            RecurringJob.AddOrUpdate((EPGProgram x) => x.GetProgramme(), "0 3 * * *");
+            app.UseRouting();
             app.UseAuthentication();
-
-            app.UseMvc(routes =>
-            {
-                routes.MapRoute(
-                    name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
-            });
+            app.UseEndpoints(endpoints => { endpoints.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}"); });
+            //app.UseMvc(routes =>
+            //{
+            //    routes.MapRoute(
+            //        name: "default",
+            //        template: "{controller=Home}/{action=Index}/{id?}");
+            //});
         }
     }
 }
